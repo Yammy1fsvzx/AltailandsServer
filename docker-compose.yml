@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine  # Используем легкий образ Alpine
+    container_name: altailands_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Сохраняем данные БД между перезапусками
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    expose:
+      - 5432 # Открываем порт только для внутренней сети Docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: . # Собираем образ из локального Dockerfile
+    container_name: altailands_backend
+    # command: > # Можно переопределить команду запуска здесь или оставить из Dockerfile
+    #   sh -c "python manage.py migrate &&
+    #          gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    volumes:
+      - .:/app # Монтируем код для разработки (можно убрать для чистого production)
+      - static_volume:/app/static_root # Том для собранной статики
+      - media_volume:/app/media # Том для медиафайлов
+    ports:
+      - "8000:8000" # Пробрасываем порт наружу
+    env_file:
+      - .env # Загружаем переменные из .env
+    depends_on:
+      db:
+        condition: service_healthy # Запускаем backend только после того, как БД будет готова
+    environment:
+      - DATABASE_URL=${DATABASE_URL} # Передаем URL базы данных
+      - DJANGO_SETTINGS_MODULE=core.settings # Указываем файл настроек
+
+volumes:
+  postgres_data: # Именованный том для данных PostgreSQL
+  static_volume: # Именованный том для статики
+  media_volume:  # Именованный том для медиа 
