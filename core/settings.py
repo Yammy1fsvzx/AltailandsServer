@@ -31,6 +31,12 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Unfold admin theme must be before django.contrib.admin
+    "unfold",
+    "unfold.contrib.filters", # Optional, if you want unfold filters
+    "unfold.contrib.forms",   # Optional, if you want unfold forms
+    # ... other unfold contrib apps if needed ...
+    # Standard Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -44,11 +50,12 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
+    "django_jsonform", # Add django-jsonform
     # Local apps
     "contacts",
     "authentication",
     "news",
-    "listings",
+    "catalog",
     "quizzes",
     "requests_app",
     "analytics_app",
@@ -165,6 +172,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
 
 # CORS Settings
@@ -215,4 +224,100 @@ SIMPLE_JWT = {
     "TOKEN_BLACKLIST_SERIALIZER": "rest_framework_simplejwt.serializers.TokenBlacklistSerializer",
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
+}
+
+# Unfold Theme Settings
+UNFOLD = {
+    "SITE_TITLE": "Altailands Admin",
+    "SITE_HEADER": "Altailands Admin Panel",
+    # "SITE_URL": "/", # URL для кнопки "View site"
+    # "SITE_ICON": lambda request: "static/favicon.ico", # Путь к фавиконке
+    "COLORS": {
+        "primary": {
+            "50": "#ecfdf5",
+            "100": "#d1fae5",
+            "200": "#a7f3d0",
+            "300": "#6ee7b7",
+            "400": "#34d399",
+            "500": "#10b981", # Основной зеленый (Emerald 500)
+            "600": "#059669",
+            "700": "#047857",
+            "800": "#065f46",
+            "900": "#064e3b",
+            "950": "#022c22",
+        }
+    },
+    "SIDEBAR": {
+        "show_search": True, # Поиск по меню
+        "show_all_applications": False, # Скрыть автоматический список приложений
+        "navigation": [
+            {
+                "title": "Аналитика", # Пример отдельного пункта
+                "icon": "heroicons-outline-chart-bar",
+                "items": [
+                    # Ссылки на страницы аналитики, если они есть в админке
+                ]
+            },
+            {
+                "title": "Каталог: Участки",
+                "icon": "heroicons-outline-map",
+                "items": [
+                    {"title": "Земельные участки", "link": "/admin/catalog/landplot/"},
+                    {"title": "Категории земель", "link": "/admin/catalog/landcategory/"},
+                    {"title": "Виды разреш. исп.", "link": "/admin/catalog/landusetype/"},
+                ]
+            },
+            {
+                "title": "Каталог: Другие объекты",
+                "icon": "heroicons-outline-building-office-2",
+                "items": [
+                    {"title": "Объекты", "link": "/admin/catalog/genericproperty/"},
+                    {"title": "Типы объектов", "link": "/admin/catalog/propertytype/"},
+                ]
+            },
+            {
+                "title": "Каталог: Справочники",
+                "icon": "heroicons-outline-book-open",
+                "items": [
+                    {"title": "Местоположения", "link": "/admin/catalog/location/"},
+                    {"title": "Характеристики", "link": "/admin/catalog/feature/"},
+                    # MediaFile обычно не нужно выносить сюда
+                ]
+            },
+            {
+                "title": "Контент",
+                "icon": "heroicons-outline-newspaper",
+                "items": [
+                    {"title": "Новости", "link": "/admin/news/newsarticle/"},
+                    {"title": "Категории новостей", "link": "/admin/news/category/"},
+                ]
+            },
+             {
+                "title": "Обратная связь",
+                "icon": "heroicons-outline-inbox-arrow-down",
+                "items": [
+                    {"title": "Заявки", "link": "/admin/requests_app/request/"},
+                    {"title": "Обращения (контакты)", "link": "/admin/contacts/contactsubmission/"},
+                    {"title": "Контакты компании", "link": "/admin/contacts/contact/"},
+                ]
+            },
+            {
+                "title": "Квизы",
+                "icon": "heroicons-outline-question-mark-circle",
+                "items": [
+                    {"title": "Квизы", "link": "/admin/quizzes/quiz/"},
+                    {"title": "Вопросы", "link": "/admin/quizzes/question/"},
+                    {"title": "Ответы", "link": "/admin/quizzes/answer/"},
+                ]
+            },
+            {
+                "title": "Управление доступом",
+                "icon": "heroicons-outline-users",
+                "items": [
+                    {"title": "Пользователи", "link": "/admin/auth/user/"},
+                    {"title": "Группы", "link": "/admin/auth/group/"},
+                ]
+            },
+        ]
+    }
 }

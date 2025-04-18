@@ -7,8 +7,6 @@ from django.contrib.contenttypes.models import ContentType
 from .models import Request, AdminComment
 from .serializers import RequestSerializer, AdminCommentSerializer
 
-# Create your views here.
-
 @extend_schema_view(
     list=extend_schema(summary="Получить список заявок (только админ)"),
     retrieve=extend_schema(summary="Получить детали заявки (только админ)"),
@@ -22,7 +20,7 @@ class RequestViewSet(viewsets.ModelViewSet):
     """
     API для управления заявками.
     Создание доступно всем, остальные операции - только администраторам.
-    При создании заявки типа 'listing' или 'quiz' необходимо передать:
+    При создании заявки типа 'catalog' или 'quiz' необходимо передать:
     - related_object_content_type_app_label (e.g., 'listings' or 'quizzes')
     - related_object_model_name (e.g., 'landplot', 'listingunit', 'quiz')
     - related_object_id (ID объекта)

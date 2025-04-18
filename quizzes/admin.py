@@ -20,6 +20,8 @@ class QuestionInline(admin.StackedInline): # Используем StackedInline 
     extra = 1
     fields = ('text', 'order')
     ordering = ('order',)
+    ordering_field = 'order'
+    hide_ordering_field = True
     show_change_link = True
 
 @admin.register(Quiz)
@@ -27,7 +29,7 @@ class QuizAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'is_active', 'updated_at')
     list_filter = ('is_active',)
     search_fields = ('title', 'description')
-    readonly_fields = ('slug', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
     prepopulated_fields = {'slug': ('title',)}
     inlines = [QuestionInline]
     fieldsets = (

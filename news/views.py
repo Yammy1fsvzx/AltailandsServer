@@ -76,6 +76,11 @@ class NewsArticleViewSet(viewsets.ModelViewSet):
     Позволяет создавать, просматривать, редактировать и удалять новости.
     Доступ к созданию/редактированию/удалению только для аутентифицированных пользователей.
     """
-    queryset = NewsArticle.objects.select_related('category').all()
+    queryset = NewsArticle.objects.select_related('category').prefetch_related('media_files').all()
     serializer_class = NewsArticleSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly] # Чтение для всех, запись для аутентифицированных
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context

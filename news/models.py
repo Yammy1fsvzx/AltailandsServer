@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
+from django.contrib.contenttypes.fields import GenericRelation
+from catalog.models import MediaFile
 
 # Create your models here.
 
@@ -14,7 +16,15 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name) or "category"
+            potential_slug = base_slug
+            counter = 1
+            # Проверяем, существует ли такой slug
+            while Category.objects.filter(slug=potential_slug).exclude(pk=self.pk).exists():
+                # Если существует, добавляем суффикс
+                potential_slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = potential_slug
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -23,11 +33,12 @@ class Category(models.Model):
 class NewsArticle(models.Model):
     title = models.CharField(max_length=200, verbose_name='Заголовок')
     content = models.TextField(verbose_name='Содержание')
-    image = models.ImageField(upload_to='news_images/', blank=True, null=True, verbose_name='Изображение', help_text='Основное изображение для новости')
     category = models.ForeignKey(Category, related_name='articles', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Категория')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     view_count = models.PositiveIntegerField(default=0, verbose_name='Счетчик просмотров')
+
+    media_files = GenericRelation(MediaFile)
 
     class Meta:
         verbose_name = 'Новость'

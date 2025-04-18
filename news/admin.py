@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 from .models import Category, NewsArticle
-from listings.models import MediaFile # Импортируем MediaFile из listings
+from catalog.models import MediaFile # Импортируем MediaFile из listings
 
 class MediaFileInline(GenericTabularInline):
     model = MediaFile
