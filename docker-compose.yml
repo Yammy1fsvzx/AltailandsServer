@@ -1,52 +1,50 @@
 version: '3.8'
 
 services:
-  # Удаляем сервис db полностью
-  # db:
-  #   image: postgres:15-alpine
-  #   container_name: altailands_db
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data/
-  #   environment:
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #   expose:
-  #     - 5432
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
-  backend:
-    build: . 
-    container_name: altailands_backend
-    # command: ... (оставляем как есть)
-    volumes:
-      - .:/app # Монтируем код для разработки
-      - static_volume:/app/static_root 
-      - media_volume:/app/media 
-      # Добавляем монтирование файла SQLite, чтобы он сохранялся вне контейнера
-      - ./db.sqlite3:/app/db.sqlite3 
-    ports:
-      - "8000:8000"
+  app:
+    build: .
+    container_name: django_app
+    # Переменные окружения можно загрузить из файла .env
     env_file:
-      - .env # Оставляем для других переменных (SECRET_KEY и т.д.)
-    # Удаляем depends_on
+      - .env
+    volumes:
+      # Монтируем медиа-файлы, чтобы они были доступны nginx и сохранялись
+      - ./media:/app/media
+      # Монтируем файл базы данных SQLite, чтобы он сохранялся
+      # ВАЖНО: Убедись, что путь к базе данных в settings.py соответствует /app/db.sqlite3
+      - ./db.sqlite3:/app/db.sqlite3
+      # Монтируем директорию со статикой (хотя она собирается в образ,
+      # nginx может ее прочитать напрямую из этого volume)
+      - static_volume:/app/static_root
+    # Мы не публикуем порт 8000 наружу, т.к. доступ будет через nginx
+    # expose:
+    #   - 8000
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 core.wsgi:application"
     # depends_on:
-    #   db:
-    #     condition: service_healthy
-    # Удаляем DATABASE_URL из environment
-    # environment:
-    #   - DATABASE_URL=${DATABASE_URL}
-    # Оставляем только нужные переменные окружения для Django
-    environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
-      # Можно добавить DEBUG, SECRET_KEY и т.д. сюда или оставить в .env
+      # Можно добавить зависимости, например, базу данных PostgreSQL, если используешь
+      # - db # Пример, если бы была отдельная БД
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      # Пробрасываем порт 80 хоста на порт 80 контейнера nginx
+      - "80:80"
+      # Если нужен HTTPS, добавь порт 443
+      # - "443:443"
+    volumes:
+      # Монтируем нашу конфигурацию nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      # Монтируем статику из volume, который создает app
+      - static_volume:/app/static_root:ro # :ro - read-only, nginx только читает статику
+      # Монтируем медиа из volume, который создает app
+      - ./media:/app/media:ro # :ro - read-only
+      # Если используешь HTTPS, нужно будет смонтировать сертификаты
+      # - ./certs:/etc/nginx/certs
+    depends_on:
+      - app # Запускаем nginx после запуска app
 
 volumes:
-  # Удаляем том postgres_data
-  # postgres_data:
-  static_volume: 
-  media_volume:  
+  static_volume: # Docker сам управляет этим volume
