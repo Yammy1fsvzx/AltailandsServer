@@ -5,14 +5,8 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', "django-insecure-%p^+6)6sa+g8bw_gwq=jmm7n5c%$j8fgw&aa#455dw31qa8uhf")
 DEBUG = True
-# Читаем разрешенные хосты из переменной окружения DJANGO_ALLOWED_HOSTS
-# Значение по умолчанию - пустой список, но лучше задать что-то безопасное для разработки
-ALLOWED_HOSTS_ENV = os.environ.get('DJANGO_ALLOWED_HOSTS')
-if ALLOWED_HOSTS_ENV:
-    ALLOWED_HOSTS = ALLOWED_HOSTS_ENV.split(',') # Разделяем строку по запятой
-else:
-    # Оставляем значения для локальной разработки, если переменная не задана
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1'] 
+
+ALLOWED_HOSTS = ['altailands.ru', 'www.altailands.ru', '89.111.169.36', 'localhost', '127.0.0.1']
 
 # Application definition
 
