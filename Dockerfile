@@ -37,3 +37,27 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command can be overridden (e.g., in docker-compose)
 # CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"] is now handled by entrypoint 
+
+# Final stage for production
+FROM base AS production
+
+# Copy application code
+COPY . /app/
+
+# Set working directory
+WORKDIR /app
+
+# Expose the port Gunicorn will run on
+EXPOSE 8000
+
+# Collect static files (if you decide to serve them via Nginx)
+# RUN python manage.py collectstatic --noinput
+
+# Set the entrypoint script as executable
+# RUN chmod +x /app/entrypoint.sh
+# ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Start Gunicorn
+# Adjust the number of workers (-w) based on your VPS resources (e.g., 2 * number_of_cores + 1)
+# Bind to 0.0.0.0 to accept connections from Nginx container
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "core.wsgi:application"] 
