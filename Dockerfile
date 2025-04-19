@@ -1,55 +1,39 @@
-# Этап 1: Установка зависимостей и сборка wheels
-FROM python:3.11-slim as builder
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Set work directory
 WORKDIR /app
 
-# Устанавливаем системные зависимости, если нужны (например, для Pillow или баз данных)
-# RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev
+# Install system dependencies (needed for psycopg2)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    # libpq-dev \
+    # netcat-openbsd \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/*
 
-# Копируем файл зависимостей
+# Install dependencies
+# Copy only requirements first to leverage Docker cache
 COPY requirements.txt .
-# Устанавливаем wheel, чтобы собрать wheels для зависимостей
-RUN pip install --no-cache-dir wheel
-# Собираем wheels
-RUN pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Этап 2: Сборка финального образа
-FROM python:3.11-slim
+# Copy entrypoint script
+COPY ./entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-WORKDIR /app
-
-# Устанавливаем gunicorn (можно добавить в requirements.txt)
-RUN pip install --no-cache-dir gunicorn
-
-# Копируем собранные wheels из builder'а
-COPY --from=builder /wheels /wheels
-# Копируем requirements.txt
-COPY requirements.txt .
-# Устанавливаем зависимости из wheels
-RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
-
-# Копируем остальной код приложения ПОСЛЕ установки зависимостей
+# Copy project code
 COPY . .
 
-# Создаем пользователя для запуска приложения (для безопасности)
-RUN useradd --create-home --shell /bin/bash appuser
-
-# Создаем директории для статики и медиа и меняем владельца
-# Убедись, что STATIC_ROOT в твоих Django settings указывает на /app/static_root
-RUN mkdir -p /app/static_root /app/media && chown -R appuser:appuser /app/static_root /app/media
-
-# Собираем статику
-# Убедись, что DEBUG=False в настройках для production, иначе collectstatic может не сработать как надо
-RUN python manage.py collectstatic --noinput
-
-# Меняем владельца всего кода приложения
-RUN chown -R appuser:appuser /app
-
-USER appuser
-
-# Порт, который будет слушать gunicorn
+# Expose port 8000 to the Docker host, so we can access it
+# (though Nginx will be the primary access point)
 EXPOSE 8000
 
-# Запуск приложения через gunicorn
-# Количество воркеров (workers) можно настроить (например, 2 * <кол-во CPU> + 1)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "core.wsgi:application"] 
+# Run entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command can be overridden (e.g., in docker-compose)
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"] is now handled by entrypoint 

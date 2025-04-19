@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', "django-insecure-%p^+6)6sa+g8bw_gwq=jmm7n5c%$j8fgw&aa#455dw31qa8uhf")
 DEBUG = True
 
-ALLOWED_HOSTS = ['altailands.ru', 'www.altailands.ru', '89.111.169.36', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'nginx', 'frontend']
 
 # Application definition
 
@@ -74,9 +74,12 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Use SQLite
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
+        # Assuming db.sqlite3 is in the BASE_DIR (server/)
+        # Inside the container, BASE_DIR will be /app
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
@@ -157,11 +160,8 @@ REST_FRAMEWORK = {
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://altailands.ru",
-    "https://www.altailands.ru",
-    "http://frontend",
-    "https://frontend",
+    "http://localhost",
+    "http://127.0.0.1",
 ]
 CORS_ALLOW_CREDENTIALS = True # Разрешаем передачу cookies (если понадобятся для других целей)
 
